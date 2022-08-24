@@ -17,8 +17,6 @@ func index(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	fmt.Println("Form: ", r.Form)
 	fmt.Println("Path: ", r.URL.Path)
-	fmt.Println(r.Form["a"])
-	fmt.Println(r.Form["b"])
 	for k, v := range r.Form {
 		fmt.Println(k, "=>", v, strings.Join(v, "-"))
 	}
@@ -39,28 +37,36 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println(string(result))
 	json.Unmarshal(result, &infiles)
 
-	// Create new Merged pdf
-	err := api.MergeCreateFile(infiles, outfile, nil)
-	if err != nil {
-		resp = "Error: " + string(err.Error())
-	} else {
-		resp = "Success"
-	}
+	// configureation
+	conf := pdfcpu.NewDefaultConfiguration()
 
-	// permission set
-	if gjson.GetBytes(body, "protect").Int() == 1 {
+	// encrypt check and permission set
+	enc := gjson.GetBytes(body, "protect").Int() == 1
+	if enc {
 		// fmt.Println("need protect!")
 		pwd := gjson.GetBytes(body, "password").String()
-		conf := pdfcpu.NewAESConfiguration("", pwd, 256)
+		conf.OwnerPW = pwd
+		conf.UserPW = ""
+		conf.EncryptUsingAES = true
+		conf.EncryptKeyLength = 256
 		conf.Permissions = 204
-		err := api.EncryptFile(outfile, "", conf)
-		if err != nil {
-			resp += "Error encrypt: " + string(err.Error())
-		}
-		// api.SetPermissionsFile(outfile,"",conf)
 	}
 
-	// resp = "{\"success\":true,\"message\":\"success!\"}"
+	// Create new Merged or/and Encrypt pdf
+	resp = "Success"
+
+	err := api.MergeCreateFile(infiles, outfile, conf)
+	if err != nil {
+		resp = "Error for Merge: " + string(err.Error())
+	} else {
+		if enc && (conf.OwnerPW != "" || conf.UserPW != "") {
+			err = api.EncryptFile(outfile, "", conf)
+			if err != nil {
+				resp = "Error for Encrypt: " + string(err.Error())
+			}
+		}
+	}
+
 	fmt.Fprint(w, resp)
 }
 
@@ -69,7 +75,8 @@ func main() {
 	http.HandleFunc("/pdf/merge", pdfmerge)
 	http.HandleFunc("/pdf/merge/", pdfmerge)
 
-	if err := http.ListenAndServe("0.0.0.0:8384", nil); err != nil {
+	serv := "0.0.0.0:8384"
+	if err := http.ListenAndServe(serv, nil); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
