@@ -5,6 +5,8 @@ github.com/hhrutter/tiff v0.0.0-20190829141212-736cae8d0bc7 h1:o1wMw7uTNyA58IlEd
 github.com/hhrutter/tiff v0.0.0-20190829141212-736cae8d0bc7/go.mod h1:WkUxfS2JUu3qPo6tRld7ISb8HiC0gVSU91kooBMDVok=
 github.com/pdfcpu/pdfcpu v0.3.13 h1:VFon2Yo1PJt+sA57vPAeXWGLSZ7Ux3Jl4h02M0+s3dg=
 github.com/pdfcpu/pdfcpu v0.3.13/go.mod h1:UJc5xsXg0fpmjp1zOPdyYcAQArc/Zf3V0nv5URe+9fg=
+github.com/pdfcpu/pdfcpu v0.3.14-0.20220326204551-8f9a93cb9b53 h1:csGbogSexXR4V7tVq/SJ/vBoWwl39TbbffiXd2kVbuw=
+github.com/pdfcpu/pdfcpu v0.3.14-0.20220326204551-8f9a93cb9b53/go.mod h1:UJc5xsXg0fpmjp1zOPdyYcAQArc/Zf3V0nv5URe+9fg=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/tidwall/gjson v1.14.3 h1:9jvXn7olKEHU1S9vwoMGliaT8jq1vJ7IH/n9zD9Dnlw=

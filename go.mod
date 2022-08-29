@@ -3,7 +3,7 @@ module pdfwtk
 go 1.18
 
 require (
-	github.com/pdfcpu/pdfcpu v0.3.13
+	github.com/pdfcpu/pdfcpu v0.3.14-0.20220326204551-8f9a93cb9b53
 	github.com/tidwall/gjson v1.14.3
 )
 
