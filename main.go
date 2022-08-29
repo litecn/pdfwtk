@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
@@ -29,6 +30,7 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 	//output file name
 	outfile := gjson.GetBytes(body, "outfile").String()
+	log.Println(outfile)
 	// fmt.Println(outfile)
 
 	// input file names
@@ -50,6 +52,9 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 		conf.EncryptUsingAES = true
 		conf.EncryptKeyLength = 256
 		conf.Permissions = 204
+		if len(pwd) > 0 {
+			log.Println("\tneed protect!")
+		}
 	}
 
 	// Create new Merged or/and Encrypt pdf
@@ -58,15 +63,20 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 	err := api.MergeCreateFile(infiles, outfile, conf)
 	if err != nil {
 		resp = "Error for Merge: " + string(err.Error())
+		log.Println(resp)
 	} else {
 		if enc && (conf.OwnerPW != "" || conf.UserPW != "") {
 			err = api.EncryptFile(outfile, "", conf)
 			if err != nil {
 				resp = "Error for Encrypt: " + string(err.Error())
+				log.Println(resp)
 			}
 		}
 	}
-
+	if err := os.Chmod(outfile, 0666); err != nil {
+		log.Println(err)
+	}
+	log.Printf("%s down!\n", outfile)
 	fmt.Fprint(w, resp)
 }
 
