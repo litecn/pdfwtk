@@ -26,7 +26,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 func pdfmerge(w http.ResponseWriter, r *http.Request) {
 
-	var resp string
+	resp := "Success"
 	body, _ := ioutil.ReadAll(r.Body)
 	//output file name
 	outfile := gjson.GetBytes(body, "outfile").String()
@@ -57,9 +57,21 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Create new Merged or/and Encrypt pdf
-	resp = "Success"
+	//validate
+	for _, v := range infiles {
+		// fmt.Println(v)
+		err := api.ValidateFile(v, conf)
+		if err != nil {
+			fmt.Printf("%s validate error!\n", v)
+			resp = "has error"
+		}
+	}
+	// verr := api.ValidateFiles(infiles, conf)
+	// if verr != nil {
+	// 	fmt.Printf("validate error: %s", verr)
+	// }
 
+	// Create new Merged or/and Encrypt pdf
 	err := api.MergeCreateFile(infiles, outfile, conf)
 	if err != nil {
 		resp = "Error for Merge: " + string(err.Error())
@@ -76,7 +88,7 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 	if err := os.Chmod(outfile, 0666); err != nil {
 		log.Println(err)
 	}
-	log.Printf("%s down!\n", outfile)
+	log.Printf("%s %s!\n", outfile, resp)
 	fmt.Fprint(w, resp)
 }
 
