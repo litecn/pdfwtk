@@ -42,6 +42,10 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 	// configureation
 	conf := pdfcpu.NewDefaultConfiguration()
 
+	// don't validate
+	conf.ValidationMode = pdfcpu.ValidationNone
+	// fmt.Println(conf.ValidationModeString())
+
 	// encrypt check and permission set
 	enc := gjson.GetBytes(body, "protect").Int() == 1
 	if enc {
@@ -53,7 +57,7 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 		conf.EncryptKeyLength = 256
 		conf.Permissions = 204
 		if len(pwd) > 0 {
-			log.Println("\tneed protect!")
+			log.Println("\t|... need protect!")
 		}
 	}
 
