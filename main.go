@@ -8,20 +8,18 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
-	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
 	"github.com/tidwall/gjson"
 )
 
 func index(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	fmt.Println("Form: ", r.Form)
-	fmt.Println("Path: ", r.URL.Path)
-	for k, v := range r.Form {
-		fmt.Println(k, "=>", v, strings.Join(v, "-"))
-	}
+	// r.ParseForm()
+	// fmt.Println("Form: ", r.Form)
+	// fmt.Println("Path: ", r.URL.Path)
+	// for k, v := range r.Form {
+	// 	fmt.Println(k, "=>", v, strings.Join(v, "-"))
+	// }
 	fmt.Fprint(w, "It works !")
 }
 
@@ -59,7 +57,8 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 			conf.UserPW = ""
 			conf.EncryptUsingAES = true
 			conf.EncryptKeyLength = 256
-			conf.Permissions = 204
+			conf.Permissions = 2252
+			// 204 + 2048
 			if len(pwd) > 0 {
 				log.Println("\t|... need protect!")
 			}
@@ -95,22 +94,45 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 			}
 			resp = "Error: " + strconv.Itoa(len(infiles)) + " infiles, but only " + strconv.Itoa(allfile) + " validated!"
 		} else {
-			err := api.MergeCreateFile(infiles, outfile, conf)
+			// err := api.MergeCreateFile(infiles, outfile, conf)
+			reply, err := CallRpc(infiles, outfile, conf)
 			if err != nil {
 				resp = "Error for Merge: " + string(err.Error())
 				log.Printf("\t|... %s", resp)
 			} else {
-				if enc && (conf.OwnerPW != "" || conf.UserPW != "") {
-					err = api.EncryptFile(outfile, "", conf)
-					if err != nil {
-						resp = "Error for Encrypt: " + string(err.Error())
-						log.Printf("\t|... %s", resp)
-					}
-				}
+				// if enc && (conf.OwnerPW != "" || conf.UserPW != "") {
+				// 	err = api.EncryptFile(outfile, "", conf)
+				// 	if err != nil {
+				// 		resp = "Error for Encrypt: " + string(err.Error())
+				// 		log.Printf("\t|... %s", resp)
+				// 	}
+				// }
+				w, _ := os.Create(outfile)
+				// if err != nil {
+				// 	log.Fatal(err)
+				// }
+
+				defer func() {
+					// if err = w.Close(); err != nil {
+					// 	return
+					// }
+					w.Close()
+				}()
+				w.Write(reply.W)
 			}
 			if err := os.Chmod(outfile, 0666); err != nil {
 				log.Printf("\t|... error: %s", err)
 			}
+			// u, err := user.Lookup("www-data")
+			// if err != nil {
+			// 	log.Println("no user www-data")
+			// } else {
+			// 	uid, _ := strconv.Atoi(u.Uid)
+			// 	gid, _ := strconv.Atoi(u.Gid)
+			// 	if err := os.Chown(outfile, uid, gid); err != nil {
+			// 		log.Printf("\t|... error: %s", err)
+			// 	}
+			// }
 		}
 	}
 
@@ -119,7 +141,7 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", index)
+	// http.HandleFunc("/", index)
 	http.HandleFunc("/pdf/merge", pdfmerge)
 	http.HandleFunc("/pdf/merge/", pdfmerge)
 
