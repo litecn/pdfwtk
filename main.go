@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
@@ -16,12 +15,12 @@ import (
 )
 
 func index(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	fmt.Println("Form: ", r.Form)
-	fmt.Println("Path: ", r.URL.Path)
-	for k, v := range r.Form {
-		fmt.Println(k, "=>", v, strings.Join(v, "-"))
-	}
+	// r.ParseForm()
+	// fmt.Println("Form: ", r.Form)
+	// fmt.Println("Path: ", r.URL.Path)
+	// for k, v := range r.Form {
+	// 	fmt.Println(k, "=>", v, strings.Join(v, "-"))
+	// }
 	fmt.Fprint(w, "It works !")
 }
 
@@ -59,7 +58,8 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 			conf.UserPW = ""
 			conf.EncryptUsingAES = true
 			conf.EncryptKeyLength = 256
-			conf.Permissions = 204
+			conf.Permissions = 2252
+			//204 + 2048
 			if len(pwd) > 0 {
 				log.Println("\t|... need protect!")
 			}
