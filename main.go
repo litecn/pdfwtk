@@ -66,7 +66,8 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 			conf.UserPW = ""
 			conf.EncryptUsingAES = true
 			conf.EncryptKeyLength = 256
-			conf.Permissions = 204
+			conf.Permissions = 2252
+			// 204 + 2048
 			if len(pwd) > 0 {
 				log.Println("\t|... need protect!")
 			}
