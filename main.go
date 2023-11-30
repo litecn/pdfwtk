@@ -2,33 +2,40 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
+	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/tidwall/gjson"
 )
 
-func index(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	fmt.Println("Form: ", r.Form)
-	fmt.Println("Path: ", r.URL.Path)
-	for k, v := range r.Form {
-		fmt.Println(k, "=>", v, strings.Join(v, "-"))
-	}
-	fmt.Fprint(w, "It works !")
+var rpc *bool
+
+func init() {
+	rpc = flag.Bool("rpc", false, "use rpc")
+	flag.Parse()
 }
+
+// func index(w http.ResponseWriter, r *http.Request) {
+// 	// r.ParseForm()
+// 	// fmt.Println("Form: ", r.Form)
+// 	// fmt.Println("Path: ", r.URL.Path)
+// 	// for k, v := range r.Form {
+// 	// 	fmt.Println(k, "=>", v, strings.Join(v, "-"))
+// 	// }
+// 	fmt.Fprint(w, "It works !")
+// }
 
 func pdfmerge(w http.ResponseWriter, r *http.Request) {
 
 	resp := "Success"
-	body, _ := ioutil.ReadAll(r.Body)
+	body, _ := io.ReadAll(r.Body)
 	//output file name
 	outfile := gjson.GetBytes(body, "outfile").String()
 	// fmt.Println(outfile)
@@ -44,10 +51,10 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Printf("%s ready to merge...", outfile)
 		// configureation
-		conf := pdfcpu.NewDefaultConfiguration()
+		conf := model.NewDefaultConfiguration()
 
 		// don't validate
-		conf.ValidationMode = pdfcpu.ValidationNone
+		conf.ValidationMode = model.ValidationNone
 		// fmt.Println(conf.ValidationModeString())
 
 		// encrypt check and permission set
@@ -95,22 +102,58 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 			}
 			resp = "Error: " + strconv.Itoa(len(infiles)) + " infiles, but only " + strconv.Itoa(allfile) + " validated!"
 		} else {
-			err := api.MergeCreateFile(infiles, outfile, conf)
-			if err != nil {
-				resp = "Error for Merge: " + string(err.Error())
-				log.Printf("\t|... %s", resp)
+
+			if !*rpc {
+				// local
+				err := api.MergeCreateFile(infiles, outfile, conf)
+				if err != nil {
+					resp = "Error for Merge: " + string(err.Error())
+					log.Printf("\t|... %s", resp)
+				}
+
 			} else {
-				if enc && (conf.OwnerPW != "" || conf.UserPW != "") {
-					err = api.EncryptFile(outfile, "", conf)
-					if err != nil {
-						resp = "Error for Encrypt: " + string(err.Error())
-						log.Printf("\t|... %s", resp)
-					}
+
+				// CallPpc
+				reply, err := CallRpc(infiles, outfile, conf)
+				if err != nil {
+					resp = "Error for Merge: " + string(err.Error())
+					log.Printf("\t|... %s", resp)
+				} else {
+					// if enc && (conf.OwnerPW != "" || conf.UserPW != "") {
+					// 	err = api.EncryptFile(outfile, "", conf)
+					// 	if err != nil {
+					// 		resp = "Error for Encrypt: " + string(err.Error())
+					// 		log.Printf("\t|... %s", resp)
+					// 	}
+					// }
+					w, _ := os.Create(outfile)
+					// if err != nil {
+					// 	log.Fatal(err)
+					// }
+
+					defer func() {
+						// if err = w.Close(); err != nil {
+						// 	return
+						// }
+						w.Close()
+					}()
+					w.Write(reply.W)
 				}
 			}
+
 			if err := os.Chmod(outfile, 0666); err != nil {
 				log.Printf("\t|... error: %s", err)
 			}
+			// u, err := user.Lookup("www-data")
+			// if err != nil {
+			// 	log.Println("no user www-data")
+			// } else {
+			// 	uid, _ := strconv.Atoi(u.Uid)
+			// 	gid, _ := strconv.Atoi(u.Gid)
+			// 	if err := os.Chown(outfile, uid, gid); err != nil {
+			// 		log.Printf("\t|... error: %s", err)
+			// 	}
+			// }
 		}
 	}
 
@@ -119,7 +162,7 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", index)
+	// http.HandleFunc("/", index)
 	http.HandleFunc("/pdf/merge", pdfmerge)
 	http.HandleFunc("/pdf/merge/", pdfmerge)
 
