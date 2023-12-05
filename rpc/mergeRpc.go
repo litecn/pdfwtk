@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"pdfwtk/pkg"
 	"strconv"
 	"time"
 
@@ -118,7 +119,7 @@ func (t *PDF) Merge(ctx context.Context, args Args, reply *Reply) error {
 	// log.Println("files:", len(infiles))
 	w := bytes.NewBuffer(reply.W)
 	ww := io.Writer(w)
-	err := api.MergeRaw(infiles, ww, conf)
+	err := pkg.MergeRaw(infiles, ww, conf)
 	if err != nil {
 		log.Print(err)
 	}

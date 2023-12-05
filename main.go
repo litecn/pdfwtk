@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"pdfwtk/pkg"
 	"strconv"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
@@ -55,6 +56,12 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 
 		// don't validate
 		conf.ValidationMode = model.ValidationNone
+		conf.CreateBookmarks = false
+		conf.OptimizeDuplicateContentStreams = true
+		// conf.WriteObjectStream = false
+		// conf.WriteXRefStream = false
+		// conf.HeaderBufSize = 100
+
 		// fmt.Println(conf.ValidationModeString())
 
 		// encrypt check and permission set
@@ -106,12 +113,18 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 
 			if !*rpc {
 				// local
-				err := api.MergeCreateFile(infiles, outfile, conf)
+				err := pkg.MergeCreateFile(infiles, outfile, conf)
 				if err != nil {
 					resp = "Error for Merge: " + string(err.Error())
 					log.Printf("\t|... %s", resp)
 				}
-
+				if enc && (conf.OwnerPW != "" || conf.UserPW != "") {
+					err = api.EncryptFile(outfile, "", conf)
+					if err != nil {
+						resp = "Error for Encrypt: " + string(err.Error())
+						log.Printf("\t|... %s", resp)
+					}
+				}
 			} else {
 
 				// CallPpc
@@ -162,11 +175,89 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, resp)
 }
 
+func pdfvalidate(w http.ResponseWriter, r *http.Request) {
+
+	resp := "Success"
+	body, _ := io.ReadAll(r.Body)
+
+	// input file names
+	var infiles []string
+	result := []byte(gjson.GetBytes(body, "infiles").Raw)
+	// fmt.Println(string(result))
+	json.Unmarshal(result, &infiles)
+
+	if len(infiles) <= 0 {
+		resp = "Error: no infiles"
+	} else {
+		// configureation
+		conf := model.NewDefaultConfiguration()
+
+		// validate mode
+		// conf.ValidationMode = model.ValidationRelaxed
+		// fmt.Println(conf.ValidationModeString())
+
+		//validate
+		if !*rpc {
+			// local
+			for _, fn := range infiles {
+				err := api.ValidateFile(fn, conf)
+				if err != nil {
+					if resp == "Success" {
+						resp = "Error: \n"
+					}
+					resp += fmt.Sprintf("validate error: %s, %s\n", fn, err)
+					log.Printf("\t|... %s, %s\n", fn, resp)
+				}
+			}
+			// err := api.ValidateFiles(infiles, conf)
+			// if err != nil {
+			// 	resp = "validate error: " + string(err.Error())
+			// 	log.Printf("\t|... %s", resp)
+			// }
+
+			// } else {
+
+			// 	// CallPpc
+			// 	reply, err := CallRpc(infiles, outfile, conf)
+			// 	if err != nil {
+			// 		resp = "Error for Merge: " + string(err.Error())
+			// 		log.Printf("\t|... %s", resp)
+			// 	} else {
+			// 		// if enc && (conf.OwnerPW != "" || conf.UserPW != "") {
+			// 		// 	err = api.EncryptFile(outfile, "", conf)
+			// 		// 	if err != nil {
+			// 		// 		resp = "Error for Encrypt: " + string(err.Error())
+			// 		// 		log.Printf("\t|... %s", resp)
+			// 		// 	}
+			// 		// }
+			// 		w, _ := os.Create(outfile)
+			// 		// if err != nil {
+			// 		// 	log.Fatal(err)
+			// 		// }
+
+			// 		defer func() {
+			// 			// if err = w.Close(); err != nil {
+			// 			// 	return
+			// 			// }
+			// 			w.Close()
+			// 		}()
+			// 		w.Write(reply.W)
+			// 	}
+			// }
+
+		}
+	}
+
+	log.Printf("validate %s!\n", resp)
+	fmt.Fprint(w, resp)
+}
+
 func main() {
 	// http.HandleFunc("/", index)
 	http.HandleFunc("/pdf/merge", pdfmerge)
 	http.HandleFunc("/pdf/merge/", pdfmerge)
-
+	http.HandleFunc("/pdf/validate", pdfvalidate)
+	http.HandleFunc("/pdf/validate/", pdfvalidate)
 	serv := "0.0.0.0:8384"
 	if err := http.ListenAndServe(serv, nil); err != nil {
 		log.Fatal("ListenAndServe: ", err)

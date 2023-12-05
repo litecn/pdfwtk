@@ -64,7 +64,7 @@ func CallRpc(inFiles []string, outFile string, conf *model.Configuration) (*Repl
 		// fmt.Println(f)
 		fb, err := os.ReadFile(f)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("Error: %s, %s\n", f, err)
 			return nil, err
 		}
 		ff = append(ff, fb)
@@ -80,12 +80,12 @@ func CallRpc(inFiles []string, outFile string, conf *model.Configuration) (*Repl
 	// err := xclient.Call(context.Background(), "Merge", args, reply)
 	call, err := xclient.Go(context.Background(), "Merge", args, reply, nil)
 	if err != nil {
-		log.Fatalf("failed to call: %v", err)
+		log.Printf("failed to call: %v\n", err)
 		return nil, err
 	}
 	replyCall := <-call.Done
 	if replyCall.Error != nil {
-		log.Fatalf("failed to call: %v", replyCall.Error)
+		log.Printf("failed to call: %v\n", replyCall.Error)
 		return nil, err
 	} else {
 		return reply, nil
