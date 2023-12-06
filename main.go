@@ -75,6 +75,7 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 			conf.EncryptKeyLength = 256
 			conf.Permissions = 2252
 			// 204 + 2048
+			conf.Cmd = model.ENCRYPT
 			if len(pwd) > 0 {
 				log.Println("\t|... need protect!")
 			}
@@ -113,18 +114,20 @@ func pdfmerge(w http.ResponseWriter, r *http.Request) {
 
 			if !*rpc {
 				// local
+				log.Println("conf:", conf.Cmd)
 				err := pkg.MergeCreateFile(infiles, outfile, conf)
 				if err != nil {
 					resp = "Error for Merge: " + string(err.Error())
 					log.Printf("\t|... %s", resp)
 				}
-				if enc && (conf.OwnerPW != "" || conf.UserPW != "") {
-					err = api.EncryptFile(outfile, "", conf)
-					if err != nil {
-						resp = "Error for Encrypt: " + string(err.Error())
-						log.Printf("\t|... %s", resp)
-					}
-				}
+				// if enc && (conf.OwnerPW != "" || conf.UserPW != "") {
+				// 	// err = api.EncryptFile(outfile, "", conf)
+				// 	err = api.SetPermissionsFile(outfile, "", conf)
+				// 	if err != nil {
+				// 		resp = "Error for Encrypt: " + string(err.Error())
+				// 		log.Printf("\t|... %s", resp)
+				// 	}
+				// }
 			} else {
 
 				// CallPpc

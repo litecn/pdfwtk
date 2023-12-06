@@ -16,6 +16,7 @@ import (
 )
 
 func Merge(destFile string, inFiles []string, w io.Writer, conf *model.Configuration) error {
+	enc := conf.Cmd == model.ENCRYPT
 
 	if w == nil {
 		return errors.New("pdfcpu: Merge: Please provide w")
@@ -79,11 +80,15 @@ func Merge(destFile string, inFiles []string, w io.Writer, conf *model.Configura
 	// if err := api.OptimizeContext(ctxDest); err != nil {
 	// 	return err
 	// }
+	if enc {
+		ctxDest.Cmd = model.ENCRYPT
+	}
 
 	return api.WriteContext(ctxDest, w)
 }
 
 func MergeRaw(rsc []io.ReadSeeker, w io.Writer, conf *model.Configuration) error {
+	enc := conf.Cmd == model.ENCRYPT
 
 	if rsc == nil {
 		return errors.New("pdfcpu: MergeRaw: missing rsc")
@@ -116,7 +121,9 @@ func MergeRaw(rsc []io.ReadSeeker, w io.Writer, conf *model.Configuration) error
 	// if err = api.OptimizeContext(ctxDest); err != nil {
 	// 	return err
 	// }
-
+	if enc {
+		ctxDest.Cmd = model.ENCRYPT
+	}
 	return api.WriteContext(ctxDest, w)
 }
 

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/rcrowley/go-metrics"
 	"github.com/rpcxio/rpcx-etcd/serverplugin"
@@ -126,17 +125,17 @@ func (t *PDF) Merge(ctx context.Context, args Args, reply *Reply) error {
 
 	reply.W = w.Bytes()
 
-	if conf.OwnerPW != "" || conf.UserPW != "" {
-		rs := bytes.NewReader(reply.W)
-		w.Reset()
-		err = api.Encrypt(rs, ww, conf)
-		if err != nil {
-			log.Print(err)
-			// return err
-		} else {
-			reply.W = w.Bytes()
-		}
-	}
+	// if conf.OwnerPW != "" || conf.UserPW != "" {
+	// 	rs := bytes.NewReader(reply.W)
+	// 	w.Reset()
+	// 	err = api.Encrypt(rs, ww, conf)
+	// 	if err != nil {
+	// 		log.Print(err)
+	// 		// return err
+	// 	} else {
+	// 		reply.W = w.Bytes()
+	// 	}
+	// }
 
 	log.Println("files:", len(infiles), " bytes:", humanize.Bytes(uint64(len(w.Bytes()))))
 	// log.Println("Duration:", humanize.Time(startTime))
